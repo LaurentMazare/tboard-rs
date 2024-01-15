@@ -5,6 +5,10 @@ pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
+    /// SystemTime error.
+    #[error(transparent)]
+    SystemTime(#[from] std::time::SystemTimeError),
+
     /// Protobuf decode error.
     #[error(transparent)]
     ProstDecode(#[from] prost::DecodeError),
