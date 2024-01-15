@@ -1,7 +1,9 @@
 mod error;
 mod reader;
+mod writer;
 pub use error::{Error, Result};
 pub use reader::SummaryReader;
+pub use writer::SummaryWriter;
 
 // Protobuf types.
 pub mod tensorboard {
