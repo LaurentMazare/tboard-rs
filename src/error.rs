@@ -31,13 +31,13 @@ pub enum Error {
 #[macro_export]
 macro_rules! bail {
     ($msg:literal $(,)?) => {
-        return Err($crate::Error::Msg(format!($msg).into()).bt())
+        return Err($crate::Error::Msg(format!($msg).into()))
     };
     ($err:expr $(,)?) => {
-        return Err($crate::Error::Msg(format!($err).into()).bt())
+        return Err($crate::Error::Msg(format!($err).into()))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err($crate::Error::Msg(format!($fmt, $($arg)*).into()).bt())
+        return Err($crate::Error::Msg(format!($fmt, $($arg)*).into()))
     };
 }
 

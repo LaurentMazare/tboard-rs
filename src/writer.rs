@@ -2,14 +2,41 @@ use crate::{masked_crc, tensorboard, Result};
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 use prost::Message;
 
+fn global_uid() -> u64 {
+    // https://users.rust-lang.org/t/idiomatic-rust-way-to-generate-unique-id/33805
+    use std::sync::atomic;
+    static COUNTER: atomic::AtomicU64 = atomic::AtomicU64::new(1);
+    COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
+}
+
 pub struct SummaryWriter<W: std::io::Write> {
     writer: W,
     buf_len: [u8; 8],
     buf: Vec<u8>,
 }
 
+impl SummaryWriter<std::fs::File> {
+    pub fn create<P: AsRef<std::path::Path>>(logdir: P) -> Result<Self> {
+        let logdir = logdir.as_ref();
+        if !logdir.is_dir() {
+            let logdir = logdir.canonicalize();
+            crate::bail!("{logdir:?} is not a directory")
+        }
+        // https://github.com/tensorflow/tensorboard/blob/d1ab6e7a39e4dc4d556a8a73c0ae5c1b116801ba/tensorboard/summary/writer/event_file_writer.py#L76
+        let now = std::time::SystemTime::now();
+        let now = now.duration_since(std::time::UNIX_EPOCH)?.as_secs();
+        let hostname = hostname::get()?;
+        let hostname = hostname.to_string_lossy();
+        let pid = std::process::id();
+        let uid = global_uid();
+        let filename = logdir.join(format!("events.out.tfevents.{now:010}.{hostname}.{pid}.{uid}"));
+        let file = std::fs::File::create(filename)?;
+        Self::from_writer(file)
+    }
+}
+
 impl<W: std::io::Write> SummaryWriter<W> {
-    pub fn new(writer: W) -> Result<Self> {
+    pub fn from_writer(writer: W) -> Result<Self> {
         let mut slf = Self { writer, buf_len: Default::default(), buf: vec![0u8, 128] };
         slf.write(0, tensorboard::event::What::FileVersion("brain.Event:2".to_string()))?;
         Ok(slf)
