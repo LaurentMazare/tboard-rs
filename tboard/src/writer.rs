@@ -20,9 +20,12 @@ impl EventWriter<std::fs::File> {
     /// Create an `EventFileWriter` like structure in the specified log directory.
     pub fn create<P: AsRef<std::path::Path>>(logdir: P) -> Result<Self> {
         let logdir = logdir.as_ref();
-        if !logdir.is_dir() {
+        if logdir.is_file() {
             let logdir = logdir.canonicalize();
             crate::bail!("{logdir:?} is not a directory")
+        }
+        if !logdir.exists() {
+            std::fs::create_dir_all(logdir)?
         }
         // https://github.com/tensorflow/tensorboard/blob/d1ab6e7a39e4dc4d556a8a73c0ae5c1b116801ba/tensorboard/summary/writer/event_file_writer.py#L76
         let now = std::time::SystemTime::now();
@@ -51,7 +54,8 @@ impl<W: std::io::Write> EventWriter<W> {
         let buf_len_crc = masked_crc(self.buf_len.as_slice());
         self.writer.write_all(self.buf_len.as_slice())?;
         self.writer.write_u32::<LittleEndian>(buf_len_crc)?;
-        self.buf.resize(event_len, 0u8);
+        self.buf.truncate(0);
+        event.encode(&mut self.buf)?;
         self.writer.write_all(self.buf.as_slice())?;
         let event_crc = masked_crc(self.buf.as_slice());
         self.writer.write_u32::<LittleEndian>(event_crc)?;

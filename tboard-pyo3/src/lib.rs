@@ -40,7 +40,8 @@ impl EventWriter {
 
     #[pyo3(signature = (tag, scalar_value, global_step=0))]
     fn add_scalar(&mut self, tag: &str, scalar_value: f32, global_step: i64) -> PyResult<()> {
-        self.inner.write_scalar(global_step, tag, scalar_value).map_err(w)
+        self.inner.write_scalar(global_step, tag, scalar_value).map_err(w)?;
+        self.flush()
     }
 
     fn flush(&mut self) -> PyResult<()> {

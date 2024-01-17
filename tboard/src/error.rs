@@ -13,6 +13,10 @@ pub enum Error {
     #[error(transparent)]
     ProstDecode(#[from] prost::DecodeError),
 
+    /// Protobuf decode error.
+    #[error(transparent)]
+    ProstEncode(#[from] prost::EncodeError),
+
     #[error("crc mismatch, file: {file_crc} computed: {computed_crc}")]
     LenCrcMismatch { file_crc: u32, computed_crc: u32 },
 
