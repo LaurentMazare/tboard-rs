@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 
 use ::tboard as tb;
 use tb::Error;
@@ -45,7 +45,10 @@ impl EventIter {
     }
 
     fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<PyObject>> {
+        use ::tboard::tensorboard::event::What;
+        use ::tboard::tensorboard::summary::value::Value::SimpleValue;
         use std::ops::DerefMut;
+
         let slf = slf.deref_mut();
         match slf.reader.next() {
             None => Ok(None),
@@ -55,6 +58,52 @@ impl EventIter {
                 dict.set_item("wall_time", event.wall_time)?;
                 dict.set_item("step", event.step)?;
                 dict.set_item("source_metadata", event.source_metadata.map(|v| v.writer))?;
+                let mut values = vec![];
+                if let Some(what) = event.what {
+                    match what {
+                        What::Summary(summary) => {
+                            dict.set_item("kind", "summary")?;
+                            for value in summary.value.iter() {
+                                let v = PyDict::new(py);
+                                v.set_item("tag", &value.tag)?;
+                                v.set_item("node_name", &value.node_name)?;
+                                match value.value {
+                                    Some(SimpleValue(s)) => v.set_item("value", s)?,
+                                    Some(_) => {}
+                                    None => v.set_item("value", None::<usize>)?,
+                                }
+                                // v.set_item("metadata", value.metadata);
+                                values.push(v)
+                            }
+                        }
+                        What::MetaGraphDef(_) => {
+                            dict.set_item("kind", "meta_graph_def")?;
+                            // TODO
+                        }
+                        What::TaggedRunMetadata(_) => {
+                            dict.set_item("kind", "tagged_run_metadata")?;
+                            // TODO
+                        }
+                        What::FileVersion(version) => {
+                            dict.set_item("kind", "file_version")?;
+                            dict.set_item("file_version", version)?;
+                        }
+                        What::SessionLog(_) => {
+                            dict.set_item("kind", "session_log")?;
+                            // TODO
+                        }
+                        What::LogMessage(_) => {
+                            dict.set_item("kind", "log_message")?;
+                            // TODO
+                        }
+                        What::GraphDef(_) => {
+                            dict.set_item("kind", "graph_def")?;
+                            // TODO
+                        }
+                    }
+                }
+                let what = PyList::new(py, values.iter());
+                dict.set_item("what", what)?;
                 Ok(Some(dict.into()))
             }
         }
