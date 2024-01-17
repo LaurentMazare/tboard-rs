@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use ::tboard as tb;
 use tb::Error;
@@ -30,6 +31,58 @@ macro_rules! py_bail {
 enum OnError {
     Log,
     Raise,
+}
+
+#[pyclass]
+struct EventIter {
+    reader: tb::SummaryReader<std::fs::File>,
+}
+
+#[pymethods]
+impl EventIter {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<PyObject>> {
+        use std::ops::DerefMut;
+        let slf = slf.deref_mut();
+        match slf.reader.next() {
+            None => Ok(None),
+            Some(ok_or_err) => {
+                let event = ok_or_err.map_err(w)?;
+                let dict = PyDict::new(py);
+                dict.set_item("wall_time", event.wall_time)?;
+                dict.set_item("step", event.step)?;
+                dict.set_item("source_metadata", event.source_metadata.map(|v| v.writer))?;
+                Ok(Some(dict.into()))
+            }
+        }
+    }
+}
+
+#[pyclass]
+struct EventReader {
+    filename: std::path::PathBuf,
+}
+
+#[pymethods]
+impl EventReader {
+    #[new]
+    #[pyo3(signature = (filename,))]
+    fn new(filename: &str) -> PyResult<Self> {
+        let filename = std::path::PathBuf::from(filename);
+        if !filename.is_file() {
+            py_bail!("{filename:?} is not a file")
+        }
+        Ok(Self { filename })
+    }
+
+    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<EventIter> {
+        let reader = std::fs::File::open(&slf.filename)?;
+        let reader = tb::SummaryReader::new(reader);
+        Ok(EventIter { reader })
+    }
 }
 
 #[pyclass]
@@ -92,6 +145,7 @@ impl EventWriter {
 
 #[pymodule]
 fn tboard(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<EventReader>()?;
     m.add_class::<EventWriter>()?;
     Ok(())
 }
