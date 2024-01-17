@@ -80,4 +80,9 @@ impl<W: std::io::Write> EventWriter<W> {
         let what = tensorboard::event::What::Summary(tensorboard::Summary { value: vec![value] });
         self.write(step, what)
     }
+
+    pub fn flush(&mut self) -> Result<()> {
+        self.writer.flush()?;
+        Ok(())
+    }
 }
