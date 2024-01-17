@@ -16,4 +16,4 @@ crate-type = ["cdylib"]
 [dependencies]
 numpy = "0.20.0"
 pyo3 = "0.20.0"
-tboard = { path = "../tboard" }
+tboard = { path = "../tboard", version = "0.1.0" }
