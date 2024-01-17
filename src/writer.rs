@@ -9,13 +9,15 @@ fn global_uid() -> u64 {
     COUNTER.fetch_add(1, atomic::Ordering::Relaxed)
 }
 
-pub struct SummaryWriter<W: std::io::Write> {
+/// Similar to tensorboard EventFileWriter
+pub struct EventWriter<W: std::io::Write> {
     writer: W,
     buf_len: [u8; 8],
     buf: Vec<u8>,
 }
 
-impl SummaryWriter<std::fs::File> {
+impl EventWriter<std::fs::File> {
+    /// Create an `EventFileWriter` like structure in the specified log directory.
     pub fn create<P: AsRef<std::path::Path>>(logdir: P) -> Result<Self> {
         let logdir = logdir.as_ref();
         if !logdir.is_dir() {
@@ -35,7 +37,7 @@ impl SummaryWriter<std::fs::File> {
     }
 }
 
-impl<W: std::io::Write> SummaryWriter<W> {
+impl<W: std::io::Write> EventWriter<W> {
     pub fn from_writer(writer: W) -> Result<Self> {
         let mut slf = Self { writer, buf_len: Default::default(), buf: vec![0u8, 128] };
         slf.write(0, tensorboard::event::What::FileVersion("brain.Event:2".to_string()))?;
