@@ -8,6 +8,7 @@ fn w_py(err: PyErr) -> Error {
     Error::msg(err)
 }
 
+#[allow(unused)]
 fn w<E: std::error::Error>(err: E) -> PyErr {
     pyo3::exceptions::PyValueError::new_err(err.to_string())
 }
@@ -25,28 +26,57 @@ macro_rules! py_bail {
     };
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum OnError {
+    Log,
+    Raise,
+}
+
 #[pyclass]
 struct EventWriter {
     inner: tb::EventWriter<std::fs::File>,
+    on_error: OnError,
     logdir: String,
+}
+
+impl EventWriter {
+    fn handle_err(&self, r: tb::Result<()>) -> PyResult<()> {
+        match self.on_error {
+            OnError::Raise => r.map_err(w),
+            OnError::Log => {
+                if let Err(err) = r {
+                    eprintln!("error logging to {:?}: {err:?}", self.inner.filename());
+                }
+                Ok(())
+            }
+        }
+    }
 }
 
 #[pymethods]
 impl EventWriter {
     #[new]
-    fn new(logdir: String) -> PyResult<Self> {
+    #[pyo3(signature = (logdir, on_error="raise"))]
+    fn new(logdir: String, on_error: &str) -> PyResult<Self> {
         let inner = tb::EventWriter::create(&logdir).map_err(w)?;
-        Ok(Self { inner, logdir })
+        let on_error = match on_error {
+            "raise" => OnError::Raise,
+            "log" => OnError::Log,
+            on_error => py_bail!("on_error can only be 'raise' or 'log', got '{on_error}'"),
+        };
+        Ok(Self { inner, logdir, on_error })
     }
 
     #[pyo3(signature = (tag, scalar_value, global_step=0))]
     fn add_scalar(&mut self, tag: &str, scalar_value: f32, global_step: i64) -> PyResult<()> {
-        self.inner.write_scalar(global_step, tag, scalar_value).map_err(w)?;
+        let res = self.inner.write_scalar(global_step, tag, scalar_value);
+        self.handle_err(res)?;
         self.flush()
     }
 
     fn flush(&mut self) -> PyResult<()> {
-        self.inner.flush().map_err(w)
+        let res = self.inner.flush();
+        self.handle_err(res)
     }
 
     #[getter]
