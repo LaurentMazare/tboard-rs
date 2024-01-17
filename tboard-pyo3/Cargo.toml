@@ -3,6 +3,12 @@ name = "tboard-pyo3"
 version = "0.1.0"
 edition = "2021"
 
+description = "Write and read tensorboard files."
+repository = "https://github.com/LaurentMazare/tboard-rs"
+keywords = ["tensorboard", "pytorch", "deep-learning"]
+categories = ["science"]
+license = "MIT/Apache-2.0"
+
 [lib]
 name = "tboard"
 crate-type = ["cdylib"]
