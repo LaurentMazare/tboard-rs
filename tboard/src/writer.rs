@@ -14,6 +14,7 @@ pub struct EventWriter<W: std::io::Write> {
     writer: W,
     buf_len: [u8; 8],
     buf: Vec<u8>,
+    filename: Option<std::path::PathBuf>,
 }
 
 impl EventWriter<std::fs::File> {
@@ -35,14 +36,14 @@ impl EventWriter<std::fs::File> {
         let pid = std::process::id();
         let uid = global_uid();
         let filename = logdir.join(format!("events.out.tfevents.{now:010}.{hostname}.{pid}.{uid}"));
-        let file = std::fs::File::create(filename)?;
-        Self::from_writer(file)
+        let file = std::fs::File::create(&filename)?;
+        Self::from_writer(file, Some(filename))
     }
 }
 
 impl<W: std::io::Write> EventWriter<W> {
-    pub fn from_writer(writer: W) -> Result<Self> {
-        let mut slf = Self { writer, buf_len: Default::default(), buf: vec![0u8, 128] };
+    pub fn from_writer(writer: W, filename: Option<std::path::PathBuf>) -> Result<Self> {
+        let mut slf = Self { writer, buf_len: Default::default(), buf: vec![0u8, 128], filename };
         slf.write(0, tensorboard::event::What::FileVersion("brain.Event:2".to_string()))?;
         Ok(slf)
     }
@@ -88,5 +89,9 @@ impl<W: std::io::Write> EventWriter<W> {
     pub fn flush(&mut self) -> Result<()> {
         self.writer.flush()?;
         Ok(())
+    }
+
+    pub fn filename(&self) -> Option<&std::path::PathBuf> {
+        self.filename.as_ref()
     }
 }

@@ -28,14 +28,15 @@ macro_rules! py_bail {
 #[pyclass]
 struct EventWriter {
     inner: tb::EventWriter<std::fs::File>,
+    logdir: String,
 }
 
 #[pymethods]
 impl EventWriter {
     #[new]
-    fn new(path: std::path::PathBuf) -> PyResult<Self> {
-        let inner = tb::EventWriter::create(path).map_err(w)?;
-        Ok(Self { inner })
+    fn new(logdir: String) -> PyResult<Self> {
+        let inner = tb::EventWriter::create(&logdir).map_err(w)?;
+        Ok(Self { inner, logdir })
     }
 
     #[pyo3(signature = (tag, scalar_value, global_step=0))]
@@ -46,6 +47,16 @@ impl EventWriter {
 
     fn flush(&mut self) -> PyResult<()> {
         self.inner.flush().map_err(w)
+    }
+
+    #[getter]
+    fn logdir(&self) -> &str {
+        &self.logdir
+    }
+
+    #[getter]
+    fn filename(&self) -> Option<&str> {
+        self.inner.filename().and_then(|v| v.to_str())
     }
 }
 
