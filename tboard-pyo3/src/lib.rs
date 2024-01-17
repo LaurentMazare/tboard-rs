@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyBytes, PyDict, PyList};
 
 use ::tboard as tb;
 use tb::Error;
@@ -76,29 +76,33 @@ impl EventIter {
                                 values.push(v)
                             }
                         }
-                        What::MetaGraphDef(_) => {
+                        What::MetaGraphDef(def) => {
                             dict.set_item("kind", "meta_graph_def")?;
-                            // TODO
+                            dict.set_item("meta_graph_def", PyBytes::new(py, &def))?;
                         }
-                        What::TaggedRunMetadata(_) => {
+                        What::TaggedRunMetadata(trm) => {
                             dict.set_item("kind", "tagged_run_metadata")?;
-                            // TODO
+                            dict.set_item("tag", trm.tag)?;
+                            dict.set_item("run_metadata", trm.run_metadata)?;
                         }
                         What::FileVersion(version) => {
                             dict.set_item("kind", "file_version")?;
                             dict.set_item("file_version", version)?;
                         }
-                        What::SessionLog(_) => {
+                        What::SessionLog(sl) => {
                             dict.set_item("kind", "session_log")?;
-                            // TODO
+                            dict.set_item("status", sl.status)?;
+                            dict.set_item("msg", sl.msg)?;
+                            dict.set_item("checkpoint_path", sl.checkpoint_path)?;
                         }
-                        What::LogMessage(_) => {
+                        What::LogMessage(lm) => {
                             dict.set_item("kind", "log_message")?;
-                            // TODO
+                            dict.set_item("level", lm.level)?;
+                            dict.set_item("message", lm.message)?;
                         }
-                        What::GraphDef(_) => {
+                        What::GraphDef(gd) => {
                             dict.set_item("kind", "graph_def")?;
-                            // TODO
+                            dict.set_item("graph_def", PyBytes::new(py, &gd))?;
                         }
                     }
                 }
