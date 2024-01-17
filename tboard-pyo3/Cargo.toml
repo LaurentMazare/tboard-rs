@@ -1,0 +1,13 @@
+[package]
+name = "tboard-pyo3"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "tboard"
+crate-type = ["cdylib"]
+
+[dependencies]
+numpy = "0.20.0"
+pyo3 = "0.20.0"
+tboard = { path = "../tboard" }

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use tboard as tb;
 use timens::{Span, Time};
 
 #[derive(Parser, Debug)]
