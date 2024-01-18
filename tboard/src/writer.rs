@@ -77,8 +77,8 @@ impl<W: std::io::Write> EventWriter<W> {
 
     pub fn write_scalar(&mut self, step: i64, name: &str, value: f32) -> Result<()> {
         let value = tensorboard::summary::Value {
-            node_name: name.to_string(),
-            tag: "".to_string(),
+            node_name: "".to_string(),
+            tag: name.to_string(),
             metadata: None,
             value: Some(tensorboard::summary::value::Value::SimpleValue(value)),
         };
