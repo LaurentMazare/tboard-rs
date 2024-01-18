@@ -1,7 +1,9 @@
+import math
 import tboard
 
 tb = tboard.EventWriter("/tmp/test-event-writer")
-tb.add_scalar("sample-tag", 3.14159265358979, 42)
+for step in range(100000):
+    tb.add_scalar("sin(step)", math.sin(step * 1e-4), step)
 tb.flush()
 
 print(tb.filename)
