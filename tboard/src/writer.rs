@@ -75,12 +75,116 @@ impl<W: std::io::Write> EventWriter<W> {
         })
     }
 
-    pub fn write_scalar(&mut self, step: i64, name: &str, value: f32) -> Result<()> {
+    pub fn write_scalar(&mut self, step: i64, tag: &str, value: f32) -> Result<()> {
         let value = tensorboard::summary::Value {
             node_name: "".to_string(),
-            tag: name.to_string(),
+            tag: tag.to_string(),
             metadata: None,
             value: Some(tensorboard::summary::value::Value::SimpleValue(value)),
+        };
+        let what = tensorboard::event::What::Summary(tensorboard::Summary { value: vec![value] });
+        self.write(step, what)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_audio(
+        &mut self,
+        step: i64,
+        tag: &str,
+        content_type: &str,
+        encoded_audio_string: Vec<u8>,
+        length_frames: i64,
+        num_channels: i64,
+        sample_rate: f32,
+    ) -> Result<()> {
+        let audio = tensorboard::summary::Audio {
+            content_type: content_type.to_string(),
+            encoded_audio_string,
+            length_frames,
+            num_channels,
+            sample_rate,
+        };
+        let value = tensorboard::summary::Value {
+            node_name: "".to_string(),
+            tag: tag.to_string(),
+            metadata: None,
+            value: Some(tensorboard::summary::value::Value::Audio(audio)),
+        };
+        let what = tensorboard::event::What::Summary(tensorboard::Summary { value: vec![value] });
+        self.write(step, what)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_histo(
+        &mut self,
+        step: i64,
+        tag: &str,
+        min: f64,
+        max: f64,
+        num: f64,
+        sum: f64,
+        sum_squares: f64,
+        bucket: Vec<f64>,
+        bucket_limit: Vec<f64>,
+    ) -> Result<()> {
+        let histo =
+            tensorboard::HistogramProto { bucket, bucket_limit, max, min, num, sum, sum_squares };
+        let value = tensorboard::summary::Value {
+            node_name: "".to_string(),
+            tag: tag.to_string(),
+            metadata: None,
+            value: Some(tensorboard::summary::value::Value::Histo(histo)),
+        };
+        let what = tensorboard::event::What::Summary(tensorboard::Summary { value: vec![value] });
+        self.write(step, what)
+    }
+
+    pub fn write_image(
+        &mut self,
+        step: i64,
+        tag: &str,
+        width: i32,
+        height: i32,
+        colorspace: i32,
+        encoded_image_string: Vec<u8>,
+    ) -> Result<()> {
+        let image = tensorboard::summary::Image { width, height, colorspace, encoded_image_string };
+        let value = tensorboard::summary::Value {
+            node_name: "".to_string(),
+            tag: tag.to_string(),
+            metadata: None,
+            value: Some(tensorboard::summary::value::Value::Image(image)),
+        };
+        let what = tensorboard::event::What::Summary(tensorboard::Summary { value: vec![value] });
+        self.write(step, what)
+    }
+
+    pub fn write_tensor(&mut self, step: i64, tag: &str) -> Result<()> {
+        let tensor = tensorboard::TensorProto {
+            dtype: tensorboard::DataType::DtFloat.into(),
+            tensor_shape: None,
+            tensor_content: vec![],
+            version_number: 0,
+            bool_val: vec![],
+            double_val: vec![],
+            dcomplex_val: vec![],
+            float_val: vec![],
+            float8_val: vec![],
+            half_val: vec![],
+            int_val: vec![],
+            int64_val: vec![],
+            resource_handle_val: vec![],
+            scomplex_val: vec![],
+            string_val: vec![],
+            uint32_val: vec![],
+            uint64_val: vec![],
+            variant_val: vec![],
+        };
+        let value = tensorboard::summary::Value {
+            node_name: "".to_string(),
+            tag: tag.to_string(),
+            metadata: None,
+            value: Some(tensorboard::summary::value::Value::Tensor(tensor)),
         };
         let what = tensorboard::event::What::Summary(tensorboard::Summary { value: vec![value] });
         self.write(step, what)
