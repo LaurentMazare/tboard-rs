@@ -2,6 +2,58 @@ use crate::{masked_crc, tensorboard, Result};
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 use prost::Message;
 
+pub trait TensorType: Sized {
+    fn into_proto(v: Vec<Self>) -> tensorboard::TensorProto;
+}
+
+impl TensorType for f32 {
+    fn into_proto(float_val: Vec<Self>) -> tensorboard::TensorProto {
+        tensorboard::TensorProto {
+            dtype: tensorboard::DataType::DtFloat.into(),
+            tensor_shape: None,
+            version_number: 0,
+            float_val,
+            ..Default::default()
+        }
+    }
+}
+
+impl TensorType for f64 {
+    fn into_proto(double_val: Vec<Self>) -> tensorboard::TensorProto {
+        tensorboard::TensorProto {
+            dtype: tensorboard::DataType::DtDouble.into(),
+            tensor_shape: None,
+            version_number: 0,
+            double_val,
+            ..Default::default()
+        }
+    }
+}
+
+impl TensorType for i64 {
+    fn into_proto(int64_val: Vec<Self>) -> tensorboard::TensorProto {
+        tensorboard::TensorProto {
+            dtype: tensorboard::DataType::DtInt64.into(),
+            tensor_shape: None,
+            version_number: 0,
+            int64_val,
+            ..Default::default()
+        }
+    }
+}
+
+impl TensorType for i32 {
+    fn into_proto(int_val: Vec<Self>) -> tensorboard::TensorProto {
+        tensorboard::TensorProto {
+            dtype: tensorboard::DataType::DtInt32.into(),
+            tensor_shape: None,
+            version_number: 0,
+            int_val,
+            ..Default::default()
+        }
+    }
+}
+
 fn global_uid() -> u64 {
     // https://users.rust-lang.org/t/idiomatic-rust-way-to-generate-unique-id/33805
     use std::sync::atomic;
@@ -159,27 +211,8 @@ impl<W: std::io::Write> EventWriter<W> {
         self.write(step, what)
     }
 
-    pub fn write_tensor(&mut self, step: i64, tag: &str) -> Result<()> {
-        let tensor = tensorboard::TensorProto {
-            dtype: tensorboard::DataType::DtFloat.into(),
-            tensor_shape: None,
-            tensor_content: vec![],
-            version_number: 0,
-            bool_val: vec![],
-            double_val: vec![],
-            dcomplex_val: vec![],
-            float_val: vec![],
-            float8_val: vec![],
-            half_val: vec![],
-            int_val: vec![],
-            int64_val: vec![],
-            resource_handle_val: vec![],
-            scomplex_val: vec![],
-            string_val: vec![],
-            uint32_val: vec![],
-            uint64_val: vec![],
-            variant_val: vec![],
-        };
+    pub fn write_tensor<T: TensorType>(&mut self, step: i64, tag: &str, val: Vec<T>) -> Result<()> {
+        let tensor = T::into_proto(val);
         let value = tensorboard::summary::Value {
             node_name: "".to_string(),
             tag: tag.to_string(),
