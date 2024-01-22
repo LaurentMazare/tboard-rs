@@ -17,6 +17,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - uses: arduino/setup-protoc@v2
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -51,7 +52,6 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add rustfmt
-      - uses: arduino/setup-protoc@v2
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
