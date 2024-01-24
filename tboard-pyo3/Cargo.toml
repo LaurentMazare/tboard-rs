@@ -1,6 +1,6 @@
 [package]
 name = "tboard-pyo3"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 description = "Write and read tensorboard files."
@@ -16,4 +16,4 @@ crate-type = ["cdylib"]
 [dependencies]
 numpy = "0.20.0"
 pyo3 = "0.20.0"
-tboard = { path = "../tboard", version = "0.1.0" }
+tboard = { path = "../tboard", version = "0.1.1" }
