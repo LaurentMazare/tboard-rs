@@ -18,6 +18,8 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -37,6 +39,8 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -69,6 +73,8 @@ jobs:
           override: true
       - run: rustup component add clippy
       - uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
