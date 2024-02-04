@@ -1,5 +1,6 @@
 mod error;
 mod reader;
+pub mod wave;
 mod writer;
 pub use error::{Error, Result};
 pub use reader::SummaryReader;
