@@ -166,6 +166,26 @@ impl<W: std::io::Write> EventWriter<W> {
         self.write(step, what)
     }
 
+    pub fn write_pcm_as_wav<S: crate::wave::Sample>(
+        &mut self,
+        step: i64,
+        tag: &str,
+        pcm_data: &[S],
+        sample_rate: u32,
+    ) -> Result<()> {
+        let mut encoded_data = Vec::new();
+        crate::wave::write_pcm_as_wav(&mut encoded_data, pcm_data, sample_rate)?;
+        self.write_audio(
+            step,
+            tag,
+            "audio/wav",
+            encoded_data,
+            pcm_data.len() as i64,
+            1,
+            sample_rate as f32,
+        )
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn write_histo(
         &mut self,

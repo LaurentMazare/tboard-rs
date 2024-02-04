@@ -180,6 +180,19 @@ impl EventWriter {
         self.flush()
     }
 
+    #[pyo3(signature = (tag, pcm_data, sample_rate, global_step=0))]
+    fn add_audio(
+        &mut self,
+        tag: &str,
+        pcm_data: Vec<f32>,
+        sample_rate: u32,
+        global_step: i64,
+    ) -> PyResult<()> {
+        let res = self.inner.write_pcm_as_wav(global_step, tag, &pcm_data, sample_rate);
+        self.handle_err(res)?;
+        self.flush()
+    }
+
     fn flush(&mut self) -> PyResult<()> {
         let res = self.inner.flush();
         self.handle_err(res)
